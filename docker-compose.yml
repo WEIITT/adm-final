@@ -1,0 +1,56 @@
+services:
+  mongo-service:
+    image: mongo:7
+    container_name: mongo-service
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "3002:3002"
+    environment:
+      - MONGO_URL=mongodb://mongo-service:27017/usersdb
+    depends_on:
+      - mongo-service
+
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    ports:
+      - "3003:3003"
+    environment:
+      - MONGO_URL=mongodb://mongo-service:27017/tasksdb
+    depends_on:
+      - mongo-service
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - USER_SERVICE_URL=http://user-service:3002
+      - JWT_SECRET=adm-final-secret
+    depends_on:
+      - user-service
+
+  orchestrator-service:
+    build: ./orchestrator-service
+    container_name: orchestrator-service
+    ports:
+      - "3000:3000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - TASK_SERVICE_URL=http://task-service:3003
+    depends_on:
+      - auth-service
+      - user-service
+      - task-service
+
+volumes:
+  mongo-data:
