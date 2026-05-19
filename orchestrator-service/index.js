@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://user-service:3002';
 const TASK_SERVICE_URL = process.env.TASK_SERVICE_URL || 'http://task-service:3003';
+const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || "http://notification-service:3004";
 
 async function validateToken(req, res, next) {
   try {
@@ -145,3 +146,15 @@ app.delete('/api/tasks/:id', validateToken, async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Orchestrator Service a correr na porta ${PORT}`));
+
+app.get("/notifications/:userId", async (req, res) => {
+  try {
+    const response = await axios.get(`${NOTIFICATION_SERVICE_URL}/notifications/${req.params.userId}`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({
+      message: "Erro ao comunicar com o Notification Service",
+      error: error.message
+    });
+  }
+});
