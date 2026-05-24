@@ -1,11 +1,13 @@
+version: "3.8"
+
 services:
-  mongo-service:
+  mongo:
     image: mongo:7
     container_name: mongo-service
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - mongo_data:/data/db
 
   user-service:
     build: ./user-service
@@ -13,19 +15,10 @@ services:
     ports:
       - "3002:3002"
     environment:
-      - MONGO_URL=mongodb://mongo-service:27017/usersdb
+      - PORT=3002
+      - MONGO_URI=mongodb://mongo:27017/taskmanager
     depends_on:
-      - mongo-service
-
-  task-service:
-    build: ./task-service
-    container_name: task-service
-    ports:
-      - "3003:3003"
-    environment:
-      - MONGO_URL=mongodb://mongo-service:27017/tasksdb
-    depends_on:
-      - mongo-service
+      - mongo
 
   auth-service:
     build: ./auth-service
@@ -33,10 +26,33 @@ services:
     ports:
       - "3001:3001"
     environment:
+      - PORT=3001
       - USER_SERVICE_URL=http://user-service:3002
-      - JWT_SECRET=adm-final-secret
+      - JWT_SECRET=adm_secret_key
     depends_on:
       - user-service
+
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - MONGO_URI=mongodb://mongo:27017/taskmanager
+    depends_on:
+      - mongo
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - TASK_SERVICE_URL=http://task-service:3003
+    depends_on:
+      - task-service
 
   orchestrator-service:
     build: ./orchestrator-service
@@ -44,13 +60,17 @@ services:
     ports:
       - "3000:3000"
     environment:
+      - PORT=3000
       - AUTH_SERVICE_URL=http://auth-service:3001
       - USER_SERVICE_URL=http://user-service:3002
       - TASK_SERVICE_URL=http://task-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+      - JWT_SECRET=adm_secret_key
     depends_on:
       - auth-service
       - user-service
       - task-service
+      - notification-service
 
 volumes:
-  mongo-data:
+  mongo_data:

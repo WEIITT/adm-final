@@ -41,9 +41,14 @@
 
 <section>
   <h2>Listar Tarefas</h2>
-  <input id="listUserId" placeholder="User ID">
-  <button onclick="listTasks()">Listar</button>
+  <button onclick="listTasks()">Listar Tarefas</button>
   <div id="tasks"></div>
+</section>
+
+<section>
+  <h2>Eliminar Utilizador</h2>
+  <input id="deleteUserId" placeholder="User ID">
+  <button onclick="deleteUser()">Eliminar Utilizador</button>
 </section>
 
 <section>
@@ -54,7 +59,9 @@
 </section>
 
 <script>
-const API = "http://localhost:3000";
+const API = "http://192.168.1.165:3000/api";
+const BASE = "http://192.168.1.165:3000";
+let token = "";
 
 async function createUser() {
   const data = {
@@ -63,7 +70,7 @@ async function createUser() {
     password: document.getElementById("password").value
   };
 
-  const res = await fetch(`${API}/users`, {
+  const res = await fetch(`${API}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -86,7 +93,18 @@ async function login() {
   });
 
   const result = await res.json();
-  document.getElementById("loginResult").innerText = JSON.stringify(result);
+
+  if (result.token) {
+    token = result.token;
+
+    document.getElementById("loginResult").innerHTML = `
+      Login efetuado com sucesso.<br>
+      <strong>User ID:</strong> ${result.user.id}<br>
+      <strong>Email:</strong> ${result.user.email}
+    `;
+  } else {
+    document.getElementById("loginResult").innerText = JSON.stringify(result);
+  }
 }
 
 async function createTask() {
@@ -100,7 +118,10 @@ async function createTask() {
 
   const res = await fetch(`${API}/tasks`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
     body: JSON.stringify(data)
   });
 
@@ -109,34 +130,87 @@ async function createTask() {
 }
 
 async function listTasks() {
-  const userId = document.getElementById("listUserId").value;
-  const res = await fetch(`${API}/tasks/user/${userId}`);
-  const tasks = await res.json();
+  const res = await fetch(`${API}/tasks`, {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
 
+  const tasks = await res.json();
   const div = document.getElementById("tasks");
   div.innerHTML = "";
+
+  if (!Array.isArray(tasks)) {
+    div.innerHTML = `<div class="task">Erro: ${JSON.stringify(tasks)}</div>`;
+    return;
+  }
+
+  if (tasks.length === 0) {
+    div.innerHTML = `<div class="task">Não existem tarefas.</div>`;
+    return;
+  }
 
   tasks.forEach(task => {
     div.innerHTML += `
       <div class="task">
         <strong>${task.title}</strong><br>
-        ${task.description}<br>
+        ${task.description || ""}<br>
         Estado: ${task.status}<br>
-        Prazo: ${task.deadline}
+        Prazo: ${task.deadline || "Sem prazo"}<br>
+        ID: ${task._id}<br>
+        <button onclick="deleteTask('${task._id}')">Eliminar Tarefa</button>
       </div>
     `;
   });
 }
 
+async function deleteTask(taskId) {
+  const res = await fetch(`${API}/tasks/${taskId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  const result = await res.json();
+  alert("Resultado: " + JSON.stringify(result));
+  listTasks();
+}
+
+async function deleteUser() {
+  const userId = document.getElementById("deleteUserId").value;
+
+  const res = await fetch(`${API}/users/${userId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  const result = await res.json();
+  alert("Resultado: " + JSON.stringify(result));
+}
+
 async function getNotifications() {
   const userId = document.getElementById("notificationUserId").value;
-  const res = await fetch(`${API}/notifications/${userId}`);
-  const notifications = await res.json();
+
+  const res = await fetch(`${BASE}/notifications/${userId}`);
+  const result = await res.json();
 
   const div = document.getElementById("notifications");
   div.innerHTML = "";
 
-  notifications.forEach(n => {
+  if (!Array.isArray(result)) {
+    div.innerHTML = `<div class="notification">Erro: ${JSON.stringify(result)}</div>`;
+    return;
+  }
+
+  if (result.length === 0) {
+    div.innerHTML = `<div class="notification">Não existem notificações.</div>`;
+    return;
+  }
+
+  result.forEach(n => {
     div.innerHTML += `
       <div class="notification">
         ${n.message}
