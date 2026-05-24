@@ -1,226 +1,438 @@
-# Projeto ADM Final — Sistema de Gestão de Tarefas com Microsserviços
+# Sistema de Gestão de Tarefas com Microsserviços
 
-Este projeto implementa um sistema de gestão de tarefas com arquitetura de microsserviços, comunicação REST síncrona, modelo Request/Response, serviço orquestrador, Docker e Kubernetes local com Minikube.
+Projeto desenvolvido no âmbito da unidade curricular de Arquiteturas Distribuídas e Microsserviços.
 
-## Microsserviços
+O objetivo principal deste projeto consiste no desenvolvimento de um sistema de gestão de tarefas baseado numa arquitetura de microsserviços, utilizando comunicação REST, Docker, MongoDB e Kubernetes com Minikube.
 
-- `orchestrator-service` — ponto de entrada central para todos os pedidos.
-- `auth-service` — autenticação de utilizadores com JWT.
-- `user-service` — criação, leitura, edição e remoção de utilizadores.
-- `task-service` — criação, leitura, edição e remoção de tarefas.
-- `mongo-service` — base de dados MongoDB usada pelos serviços de utilizadores e tarefas.
+---
 
-## Arquitetura
+# Tecnologias Utilizadas
+
+* Node.js
+* Express.js
+* MongoDB
+* JWT (JSON Web Token)
+* Docker
+* Docker Compose
+* Kubernetes
+* Minikube
+* HTML
+* CSS
+* JavaScript
+
+---
+
+# Estrutura do Projeto
 
 ```txt
-Cliente/Postman/Frontend
-        |
-        v
-Orchestrator Service :3000
-        |
-        |------> Auth Service :3001
-        |------> User Service :3002
-        |------> Task Service :3003
-                    |
-                    v
-                MongoDB :27017
+adm-final/
+├── auth-service/
+├── user-service/
+├── task-service/
+├── notification-service/
+├── orchestrator-service/
+├── frontend/
+├── k8s/
+├── docker-compose.yml
+└── README.md
 ```
 
-## Endpoints principais pelo Orchestrator
+---
 
-### Registar utilizador
+# Arquitetura do Sistema
 
-```http
-POST /api/register
-Content-Type: application/json
+O sistema foi desenvolvido segundo uma arquitetura de microsserviços.
 
-{
-  "name": "Joao",
-  "email": "joao@email.com",
-  "password": "123456"
-}
-```
+Cada microsserviço executa uma funcionalidade específica:
 
-### Login
+| Serviço              | Porta | Função                          |
+| -------------------- | ----- | ------------------------------- |
+| orchestrator-service | 3000  | Serviço central de orquestração |
+| auth-service         | 3001  | Autenticação e JWT              |
+| user-service         | 3002  | Gestão de utilizadores          |
+| task-service         | 3003  | Gestão de tarefas               |
+| notification-service | 3004  | Gestão de notificações          |
+| frontend             | 8081  | Interface Web                   |
 
-```http
-POST /api/login
-Content-Type: application/json
+---
 
-{
-  "email": "joao@email.com",
-  "password": "123456"
-}
-```
+# Funcionalidades Implementadas
 
-A resposta devolve um `token`. Usa esse token nas rotas protegidas:
+## Funcionalidades Mínimas
 
-```http
-Authorization: Bearer TOKEN_AQUI
-```
+### FM01 — Serviço Orquestrador
 
-### Criar tarefa
+O `orchestrator-service` é responsável por receber os pedidos externos e encaminhá-los para os serviços adequados.
 
-```http
-POST /api/tasks
-Authorization: Bearer TOKEN_AQUI
-Content-Type: application/json
+---
 
-{
-  "title": "Estudar Kubernetes",
-  "description": "Preparar a apresentação do projeto",
-  "status": "pending",
-  "dueDate": "2026-06-01"
-}
-```
+### FM02 — Serviço de Autenticação
 
-### Listar tarefas do utilizador autenticado
+O `auth-service` implementa autenticação baseada em JWT.
 
-```http
-GET /api/tasks
-Authorization: Bearer TOKEN_AQUI
-```
+Funcionalidades:
 
-### Atualizar tarefa
+* Login
+* Geração de token JWT
+* Validação de autenticação
 
-```http
-PUT /api/tasks/ID_DA_TAREFA
-Authorization: Bearer TOKEN_AQUI
-Content-Type: application/json
+---
 
-{
-  "status": "done"
-}
-```
+### FM03 — Serviço de Utilizadores
 
-### Apagar tarefa
+O `user-service` permite:
 
-```http
-DELETE /api/tasks/ID_DA_TAREFA
-Authorization: Bearer TOKEN_AQUI
-```
+* Criar utilizadores
+* Consultar utilizadores
+* Atualizar utilizadores
+* Eliminar utilizadores
 
-## Teste local com Docker Compose
+---
 
-Na pasta principal do projeto:
+### FM04 — Serviço de Tarefas
+
+O `task-service` permite:
+
+* Criar tarefas
+* Listar tarefas
+* Atualizar tarefas
+* Eliminar tarefas
+
+---
+
+# Funcionalidades Extra
+
+## FA01 — Serviço de Notificações
+
+O `notification-service` gera notificações relacionadas com:
+
+* tarefas próximas da data limite;
+* tarefas atrasadas.
+
+---
+
+## FA02 — Interface Web
+
+Foi desenvolvida uma interface Web simples utilizando:
+
+* HTML
+* CSS
+* JavaScript
+
+---
+
+# Base de Dados
+
+O sistema utiliza MongoDB.
+
+Coleções utilizadas:
+
+* users
+* tasks
+
+---
+
+# Execução do Projeto
+
+## 1. Entrar na pasta do projeto
 
 ```bash
-docker compose up --build
+cd /media/sf_adm-final
 ```
 
-Depois testa:
+---
+
+## 2. Executar os containers Docker
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## 3. Verificar containers
+
+```bash
+docker ps
+```
+
+Resultado esperado:
+
+```txt
+orchestrator-service
+auth-service
+user-service
+task-service
+notification-service
+mongo-service
+```
+
+---
+
+# Teste do Backend
+
+## Verificar serviço principal
 
 ```bash
 curl http://localhost:3000/health
 ```
 
-## Executar no Minikube
+Resultado esperado:
 
-### 1. Iniciar Minikube
-
-```bash
-minikube start
+```json
+{"service":"orchestrator-service","status":"OK"}
 ```
 
-### 2. Usar o Docker interno do Minikube
+---
 
-No Linux/macOS:
+# Execução do Frontend
+
+## Entrar na pasta frontend
+
+```bash
+cd /media/sf_adm-final/frontend
+```
+
+---
+
+## Iniciar servidor Web
+
+```bash
+python3 -m http.server 8081 --bind 0.0.0.0
+```
+
+---
+
+## Abrir no browser
+
+```txt
+http://192.168.1.165:8081
+```
+
+---
+
+# Funcionalidades do Frontend
+
+A interface permite:
+
+* criar utilizadores;
+* efetuar login;
+* criar tarefas;
+* listar tarefas;
+* eliminar tarefas;
+* eliminar utilizadores;
+* visualizar notificações.
+
+---
+
+# Endpoints REST
+
+## Autenticação
+
+### Login
+
+```http
+POST /api/login
+```
+
+---
+
+## Utilizadores
+
+### Criar utilizador
+
+```http
+POST /api/register
+```
+
+### Listar utilizadores
+
+```http
+GET /api/users
+```
+
+### Eliminar utilizador
+
+```http
+DELETE /api/users/:id
+```
+
+---
+
+## Tarefas
+
+### Criar tarefa
+
+```http
+POST /api/tasks
+```
+
+### Listar tarefas
+
+```http
+GET /api/tasks
+```
+
+### Eliminar tarefa
+
+```http
+DELETE /api/tasks/:id
+```
+
+---
+
+## Notificações
+
+### Obter notificações
+
+```http
+GET /notifications/:userId
+```
+
+---
+
+# Docker Compose
+
+O projeto utiliza Docker Compose para gerir os containers.
+
+Serviços definidos:
+
+* mongo
+* auth-service
+* user-service
+* task-service
+* notification-service
+* orchestrator-service
+
+---
+
+# Kubernetes e Minikube
+
+## Iniciar Minikube
+
+```bash
+minikube start --driver=docker
+```
+
+---
+
+## Configurar Docker do Minikube
 
 ```bash
 eval $(minikube docker-env)
 ```
 
-No Windows PowerShell:
+---
 
-```powershell
-minikube docker-env | Invoke-Expression
-```
-
-### 3. Construir as imagens dentro do Minikube
+## Construir imagens Docker
 
 ```bash
-docker build -t adm-auth-service:latest ./auth-service
-docker build -t adm-user-service:latest ./user-service
-docker build -t adm-task-service:latest ./task-service
-docker build -t adm-orchestrator-service:latest ./orchestrator-service
+docker build -t adm-auth-service ./auth-service
+docker build -t adm-user-service ./user-service
+docker build -t adm-task-service ./task-service
+docker build -t adm-notification-service ./notification-service
+docker build -t adm-orchestrator-service ./orchestrator-service
 ```
 
-### 4. Aplicar os ficheiros Kubernetes
+---
+
+## Aplicar configurações Kubernetes
 
 ```bash
 kubectl apply -f k8s/
 ```
 
-### 5. Verificar pods e serviços
+---
+
+## Verificar Pods
 
 ```bash
 kubectl get pods
+```
+
+---
+
+## Verificar Serviços
+
+```bash
 kubectl get services
 ```
 
-### 6. Abrir o Orchestrator no browser
+---
+
+## Abrir serviço principal
 
 ```bash
 minikube service orchestrator-service
 ```
 
-Ou usar o IP do Minikube com a porta NodePort:
+---
 
-```bash
-minikube ip
-```
+# Fluxo das Notificações
 
-Depois aceder a:
+O sistema de notificações funciona da seguinte forma:
 
 ```txt
-http://IP_DO_MINIKUBE:30080/health
+Frontend
+   ↓
+Orchestrator Service
+   ↓
+Notification Service
+   ↓
+Task Service
+   ↓
+MongoDB
 ```
 
-## Testes rápidos com curl
+As notificações são geradas quando:
 
-### Criar utilizador
+* a tarefa está atrasada;
+* a tarefa termina em menos de 2 dias.
 
-```bash
-curl -X POST http://localhost:3000/api/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Joao","email":"joao@email.com","password":"123456"}'
-```
+---
 
-### Login
+# Segurança
 
-```bash
-curl -X POST http://localhost:3000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"joao@email.com","password":"123456"}'
-```
+O sistema utiliza JWT para autenticação.
 
-### Criar tarefa
+O token é necessário para:
 
-Substitui `TOKEN_AQUI` pelo token recebido no login.
+* listar tarefas;
+* criar tarefas;
+* eliminar tarefas;
+* eliminar utilizadores.
 
-```bash
-curl -X POST http://localhost:3000/api/tasks \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN_AQUI" \
-  -d '{"title":"Estudar microsserviços","description":"Preparar defesa","status":"pending","dueDate":"2026-06-01"}'
-```
+---
 
-### Listar tarefas
+# Testes Realizados
 
-```bash
-curl http://localhost:3000/api/tasks \
-  -H "Authorization: Bearer TOKEN_AQUI"
-```
+Foram realizados testes às seguintes funcionalidades:
 
-## Observações para o relatório
+* criação de utilizadores;
+* autenticação;
+* criação de tarefas;
+* listagem de tarefas;
+* eliminação de tarefas;
+* eliminação de utilizadores;
+* notificações;
+* comunicação entre microsserviços;
+* execução em Docker;
+* integração com Kubernetes.
 
-Este projeto cumpre as funcionalidades mínimas:
+---
 
-- FM01: Serviço Orquestrador implementado.
-- FM02: Serviço de Autenticação com JWT implementado.
-- FM03: Serviço de Utilizadores implementado.
-- FM04: Serviço de Tarefas implementado.
-- Todos os serviços têm Dockerfile individual.
-- Todos os serviços têm integração Kubernetes/Minikube.
-- Comunicação REST com Request/Response.
-- Arquitetura com orquestração centralizada.
+# Conclusão
+
+O projeto implementa um sistema distribuído baseado numa arquitetura de microsserviços, utilizando REST e Docker.
+
+A solução permite a execução independente de cada serviço e a sua integração através de Kubernetes com Minikube.
+
+O sistema demonstra conceitos importantes relacionados com:
+
+* microsserviços;
+* contentorização;
+* autenticação JWT;
+* orquestração;
+* Docker;
+* Kubernetes;
+* comunicação REST.
